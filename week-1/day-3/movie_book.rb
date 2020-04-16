@@ -5,15 +5,15 @@ class Commands
   @@count = 0
   @@instances = []
 
-  def initialize(class_name, name, desc)
-    @class_name = class_name
+  attr_accessor :type, :name, :desc
+
+  def initialize(type, name, desc)
+    @type = type
     @name = name
     @desc = desc
     @@count += 1
     @@instances << self
   end
-
-  attr_accessor :name, :desc, :class_name
 
   def self.all
     @@instances.inspect
@@ -27,18 +27,12 @@ class Commands
     @@instances.each(&:print_desc)
   end
 
-  def self.valid?(cmd)
+  def self.run?(cmd)
     @@instances.each do |i|
-      next unless i.name == cmd
-
-      case i.class_name
-      when 'Movies'
-        Movies.send(cmd)
-      when 'Commands'
-        Commands.send(cmd)
+      if i.name == cmd
+        i.type.send(cmd)
+        return true
       end
-
-      return
     end
     puts "Command #{cmd} is not valid, try again"
     false
@@ -54,10 +48,19 @@ class Commands
   end
 end
 
-# This is the parent class Movies
+# A Movie has a name and rating, that's all
 class Movies
   @@count = 0
   @@instances = []
+
+  attr_accessor :name, :rating
+
+  def initialize(name, rating)
+    @name = name
+    @rating = rating
+    @@count += 1
+    @@instances << self
+  end
 
   def self.all
     @@instances.inspect
@@ -100,8 +103,9 @@ class Movies
       return false
     end
 
-    Movie.new(movie, rating)
+    Movies.new(movie, rating)
     puts "Movie #{movie} added"
+    true
   end
 
   def self.update
@@ -116,46 +120,39 @@ class Movies
     end
     original_name = @@instances[res[:pos]].name
     puts "#{original_name} has been updated with new rating of #{rating}."
+    true
   end
 
   def self.delete
     movie = ask('What movie do you want to delete?')
     res = exist?(movie)
-    p 'Movie does not exist' unless res[:found]
+    unless res[:found]
+      p 'Movie does not exist'
+      return false
+    end
     original_name = @@instances[res[:pos]].name
     @@instances.delete_at(res[:pos])
     puts "#{original_name} has been removed."
+    true
   end
-end
-
-# This is a movie with a rating
-class Movie < Movies
-  def initialize(name, rating)
-    @name = name
-    @rating = rating
-    @@count += 1
-    @@instances << self
-  end
-
-  attr_accessor :name, :rating
 
   def print
     puts "#{name}: #{rating}"
   end
 end
 
-Commands.new('Movies', 'add', 'add a contact')
-Commands.new('Movies', 'update', 'update a contact')
-Commands.new('Movies', 'display', 'display all contacts')
-Commands.new('Movies', 'delete', 'delete a contact')
-Commands.new('Commands', 'cmds', 'list all the commands')
-Commands.new('Commands', 'exit', 'abort')
+Commands.new(Movies, 'add', 'add a contact')
+Commands.new(Movies, 'update', 'update a contact')
+Commands.new(Movies, 'display', 'display all contacts')
+Commands.new(Movies, 'delete', 'delete a contact')
+Commands.new(Commands, 'cmds', 'list all the commands')
+Commands.new(Commands, 'exit', 'quit')
 
 puts 'What would you like to do?'
 Commands.cmds
 
 loop do
   input = gets.chomp
-  Commands.valid?(input)
+  Commands.run?(input)
   puts '-----------------'
 end
