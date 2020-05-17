@@ -22,10 +22,10 @@ class GithubRepoManager
   end
 
   def parse_res(res, context, success_code)
-    parsed_res = JSON.parse(res) unless res.code == 204
+    parsed_res = JSON.parse(res) if res.to_s.match?(/\w/)
     case res.code
     when success_code
-      puts "Successful #{context}"
+      puts "Success: #{context}"
     else
       puts "Error: #{parsed_res['message']}"
     end
@@ -38,17 +38,17 @@ class GithubRepoManager
                           'name': repo,
                           'private': true
                         })
-    parse_res(req, 'repo creation', 201)
+    parse_res(req, 'create repo', 201)
   end
 
   def delete_repo(repo)
     req = base_req.delete("#{api_url}/repos/#{username}/#{repo}")
-    parse_res(req, 'repo deletion', 204)
+    parse_res(req, 'delete repo', 204)
   end
 
   def update_repo_name(repo, name)
     req = base_req.patch("#{api_url}/repos/#{username}/#{repo}",
                          json: { name: name })
-    parse_res(req, 'repo updating', 200)
+    parse_res(req, 'update repo name', 200)
   end
 end
